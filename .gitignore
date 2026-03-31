@@ -42,3 +42,6 @@ tools/sdk_keys.sh
 
 # macOS
 .DS_Store
+
+# Claude/Codex files
+docs/
