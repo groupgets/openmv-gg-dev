@@ -47,6 +47,8 @@
 #define MICROPY_OPT_COMPUTED_GOTO           (1)
 #define MICROPY_GC_SPLIT_HEAP               (1)
 #define CYW43_CHIPSET_FIRMWARE_INCLUDE_FILE "lib/cyw43-driver/firmware/w4343WA1_7_45_98_102_combined.h"
+#define CYW43_DMA_ALIGNMENT                 (32)
+#define CYW43_STATE_ATTRIBUTE               __attribute__((section(".bss.cyw43_state"), aligned(CYW43_DMA_ALIGNMENT)))
 #define MICROPY_BANNER_NAME_AND_VERSION "OpenMV " OPENMV_GIT_TAG "; MicroPython " MICROPY_GIT_TAG
 
 #define MICROPY_WRAP_TUD_CDC_RX_CB(name) __mp_ ## name
@@ -58,6 +60,13 @@
 #if MICROPY_PY_LWIP_RELOCATE_MEM
 #define LWIP_DECLARE_MEMORY_ALIGNED(variable_name, size) \
     __attribute__((section(".lwip"), aligned(MEM_ALIGNMENT))) u8_t variable_name[size]
+#endif
+
+// Place only the lwIP heap in a dedicated section. Keep memp pools on the
+// default LWIP_DECLARE_MEMORY_ALIGNED path unless broad relocation is enabled.
+#if MICROPY_PY_LWIP_RELOCATE_HEAP
+#define LWIP_DECLARE_HEAP_ALIGNED(variable_name, size) \
+    __attribute__((section(".lwip_heap"), aligned(MEM_ALIGNMENT))) u8_t variable_name[size]
 #endif
 
 #include <mpconfigport.h>

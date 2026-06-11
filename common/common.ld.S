@@ -130,6 +130,16 @@ PROVIDE(__stack = __StackTop);
 } >OMV_CORE1_MEMORY
 #endif
 
+/* lwIP heap only */
+#if defined(OMV_LWIP_HEAP_MEMORY)
+.lwip_heap (NOLOAD) : ALIGN(4)
+{
+  *(.lwip_heap)
+  *(.lwip_heap*)
+  . = ALIGN(4);
+} >OMV_LWIP_HEAP_MEMORY
+#endif
+
 /* lwIP memory pools */
 #if defined(OMV_LWIP_MEMORY)
 .lwip_memory (NOLOAD) : ALIGN(4)

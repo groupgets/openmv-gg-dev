@@ -60,6 +60,17 @@
 #define OMV_USB_PHY_TXCAL45DP           (0x06U)
 #define OMV_USB_PHY_TXCAL45DM           (0x06U)
 
+// lwIP heap-only relocation. The first isolation build moves ram_heap to OCRAM
+// while keeping lwIP memp pools in DTCM.
+#ifndef MICROPY_PY_LWIP_RELOCATE_HEAP
+#define MICROPY_PY_LWIP_RELOCATE_HEAP   (1)
+#endif
+
+#if MICROPY_PY_LWIP_RELOCATE_HEAP
+#define OMV_LWIP_HEAP_MEMORY            OCRM1
+#define OMV_LWIP_HEAP_RESERVE_SIZE      (16K)
+#endif
+
 // Linker script constants (see the linker script template mimxrt10xx.ld.S).
 #define OMV_MAIN_MEMORY                 DTCM    // Data/BSS memory
 #define OMV_STACK_MEMORY                ITCM1   // stack memory
@@ -77,7 +88,11 @@
 #define OMV_UMA_BLOCK0_SIZE             (23M)
 #define OMV_UMA_BLOCK0_FLAGS            (0)
 #define OMV_UMA_BLOCK1_MEMORY           OCRM1   // Fast UMA pool.
+#if MICROPY_PY_LWIP_RELOCATE_HEAP
+#define OMV_UMA_BLOCK1_SIZE             (512K - OMV_LWIP_HEAP_RESERVE_SIZE)
+#else
 #define OMV_UMA_BLOCK1_SIZE             (512K)
+#endif
 #define OMV_UMA_BLOCK1_FLAGS            (UMA_FAST | UMA_DTCM)
 #define OMV_UMA_BLOCK2_MEMORY           DTCM    // DTCM UMA pool.
 #define OMV_UMA_BLOCK2_SIZE             (64K)
