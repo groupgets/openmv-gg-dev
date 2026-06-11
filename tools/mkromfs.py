@@ -130,19 +130,27 @@ def romfs_build(romfs_cfg, p, args):
 
     # Build/convert files in parallel.
     signal.signal(signal.SIGINT, sigint_handler)
-    with ProcessPoolExecutor(max_workers=args.jobs, initializer=init_worker) as executor:
-        futures = {
-            executor.submit(
-                process_entry, entry,
-                args.vela_args, args.stedge_args, args.build_dir
-            ): i
-            for i, entry in enumerate(romfs_cfg["entries"])
-        }
+    try:
+        with ProcessPoolExecutor(max_workers=args.jobs, initializer=init_worker) as executor:
+            futures = {
+                executor.submit(
+                    process_entry, entry,
+                    args.vela_args, args.stedge_args, args.build_dir
+                ): i
+                for i, entry in enumerate(romfs_cfg["entries"])
+            }
 
-        results = [None] * len(romfs_cfg["entries"])
-        for future in as_completed(futures):
-            idx = futures[future]
-            results[idx] = future.result()
+            results = [None] * len(romfs_cfg["entries"])
+            for future in as_completed(futures):
+                idx = futures[future]
+                results[idx] = future.result()
+    except PermissionError:
+        # Some sandboxed build hosts deny sysconf semaphore queries used by
+        # ProcessPoolExecutor. Fall back to deterministic single-process work.
+        results = [
+            process_entry(entry, args.vela_args, args.stedge_args, args.build_dir)
+            for entry in romfs_cfg["entries"]
+        ]
 
     # Rebuild entries list preserving order, inserting label entries after their tflite.
     new_entries = []
