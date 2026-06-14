@@ -1816,6 +1816,48 @@ static mp_obj_t py_csi_boson_get_radiometry_enable(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_radiometry_enable_obj, py_csi_boson_get_radiometry_enable);
 
+static mp_obj_t py_csi_boson_set_tlinear_enable(mp_obj_t self_in, mp_obj_t en_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_SET_TLINEAR_ENABLE, mp_obj_is_true(en_in));
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(py_csi_boson_set_tlinear_enable_obj, py_csi_boson_set_tlinear_enable);
+
+static mp_obj_t py_csi_boson_get_tlinear_enable(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int en;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_TLINEAR_ENABLE, &en);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_int(en);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_tlinear_enable_obj, py_csi_boson_get_tlinear_enable);
+
+static mp_obj_t py_csi_boson_set_spot_meter_stats_mode(mp_obj_t self_in, mp_obj_t mode_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_SET_SPOT_METER_STATS_MODE, mp_obj_get_int(mode_in));
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(py_csi_boson_set_spot_meter_stats_mode_obj, py_csi_boson_set_spot_meter_stats_mode);
+
+static mp_obj_t py_csi_boson_get_spot_meter_stats_mode(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int mode;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_SPOT_METER_STATS_MODE, &mode);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_int(mode);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_spot_meter_stats_mode_obj, py_csi_boson_get_spot_meter_stats_mode);
+
 static mp_obj_t py_csi_boson_set_emissivity(mp_obj_t self_in, mp_obj_t val_in) {
     py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
     int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_SET_EMISSIVITY, (double)mp_obj_get_float(val_in));
@@ -2551,6 +2593,8 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_get_spot_meter_stats),    MP_ROM_PTR(&py_csi_boson_get_spot_meter_stats_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_spot_meter_temp_stats), MP_ROM_PTR(&py_csi_boson_get_spot_meter_temp_stats_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_spot_meter_roi_max),  MP_ROM_PTR(&py_csi_boson_get_spot_meter_roi_max_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_set_spot_meter_stats_mode), MP_ROM_PTR(&py_csi_boson_set_spot_meter_stats_mode_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_spot_meter_stats_mode), MP_ROM_PTR(&py_csi_boson_get_spot_meter_stats_mode_obj) },
     // Isotherm Getters
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_enable),     MP_ROM_PTR(&py_csi_boson_get_isotherm_enable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_unit),       MP_ROM_PTR(&py_csi_boson_get_isotherm_unit_obj) },
@@ -2559,6 +2603,8 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_get_radiometry_capable),  MP_ROM_PTR(&py_csi_boson_get_radiometry_capable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_set_radiometry_enable),   MP_ROM_PTR(&py_csi_boson_set_radiometry_enable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_radiometry_enable),   MP_ROM_PTR(&py_csi_boson_get_radiometry_enable_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_set_tlinear_enable),      MP_ROM_PTR(&py_csi_boson_set_tlinear_enable_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_tlinear_enable),      MP_ROM_PTR(&py_csi_boson_get_tlinear_enable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_set_emissivity),          MP_ROM_PTR(&py_csi_boson_set_emissivity_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_emissivity),          MP_ROM_PTR(&py_csi_boson_get_emissivity_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_sw_version),          MP_ROM_PTR(&py_csi_boson_get_software_rev_obj) },

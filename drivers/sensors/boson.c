@@ -480,6 +480,38 @@ static int ioctl(omv_csi_t *csi, int request, va_list ap) {
             *out = (int)en;
             return 0;
         }
+        case OMV_CSI_IOCTL_BOSON_SET_TLINEAR_ENABLE: {
+            int en = va_arg(ap, int);
+            if (TLinearSetControl(en ? FLR_ENABLE : FLR_DISABLE) != FLR_OK) {
+                return -1;
+            }
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_TLINEAR_ENABLE: {
+            FLR_ENABLE_E en;
+            if (TLinearGetControl(&en) != FLR_OK) {
+                return -1;
+            }
+            int *out = va_arg(ap, int *);
+            *out = (int)en;
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_SET_SPOT_METER_STATS_MODE: {
+            int mode = va_arg(ap, int);
+            if (spotMeterSetStatsMode((FLR_SPOTMETER_STATS_TEMP_MODE_E)mode) != FLR_OK) {
+                return -1;
+            }
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_SPOT_METER_STATS_MODE: {
+            FLR_SPOTMETER_STATS_TEMP_MODE_E mode;
+            if (spotMeterGetStatsMode(&mode) != FLR_OK) {
+                return -1;
+            }
+            int *out = va_arg(ap, int *);
+            *out = (int)mode;
+            return 0;
+        }
         case OMV_CSI_IOCTL_BOSON_SET_EMISSIVITY: {
             // va_arg promotes float to double
             float val = (float)va_arg(ap, double);
