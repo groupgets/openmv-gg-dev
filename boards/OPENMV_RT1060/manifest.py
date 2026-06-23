@@ -28,6 +28,7 @@ freeze ("$(OMV_LIB_DIR)/", "rpc.py")
 # freeze ("$(OMV_LIB_DIR)/", "rtsp.py")  # Use device/rtsp.py instead
 freeze ("$(OMV_LIB_DIR)/", "mqtt.py")
 freeze ("$(OMV_LIB_DIR)/", "requests.py")
+require("microdot-lib")
 
 # Utils
 require("time")

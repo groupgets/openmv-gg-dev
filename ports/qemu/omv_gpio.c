@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2024 OpenMV, LLC.
+ * Copyright (C) 2023-2026 OpenMV, LLC.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,21 +28,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * STM32 DCMIPP ISP driver.
+ * QEMU dummy GPIO driver.
  */
-#ifndef __STM_ISP_H__
-#define __STM_ISP_H__
-#include <stdint.h>
 #include <stdbool.h>
-#include STM32_HAL_H
-#include "omv_csi.h"
+#include <stdint.h>
+#include "port_config.h"
 
-#ifdef DCMIPP
-int stm_isp_init(omv_csi_t *csi, uint32_t pipe, pixformat_t pixformat, bool raw_output);
-int stm_isp_update_gamma_table(omv_csi_t *csi, uint32_t pipe,
-                               float brightness, float contrast, float gamma);
-float stm_isp_update_awb(omv_csi_t *csi, uint32_t pipe);
-int stm_isp_set_scaler(omv_csi_t *csi, uint32_t pipe);
-#endif
+void omv_gpio_config(omv_gpio_t pin, uint32_t mode, uint32_t pull, uint32_t speed, uint32_t af) {
+    // Dummy implementation
+}
 
-#endif // __STM_ISP_H__
+void omv_gpio_write(omv_gpio_t pin, bool value) {
+    // Dummy implementation
+}

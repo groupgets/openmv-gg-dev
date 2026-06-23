@@ -44,6 +44,8 @@
 #define OMV_OV5640_PLL_CTRL3                (0x13)
 
 #define OMV_MT9V0XX_ENABLE                  (1)
+#define OMV_MT9V0XX_FSYNC_PIN               (&omv_pin_D4_GPIO)
+
 #define OMV_LEPTON_ENABLE                   (1)
 #define OMV_PAG7936_ENABLE                  (1)
 #define OMV_PAG7936_MIPI_CSI2               (1)
@@ -316,6 +318,7 @@
 #define OMV_CSI_HW_CROP_ENABLE              (1)
 #define OMV_CSI_MAX_DEVICES                 (3)
 #define OMV_CSI_STATS_ENABLE                (1)
+#define OMV_CSI_HW_SCALE_ENABLE             (1)
 
 #define OMV_CSI_D0_PIN                      (&omv_pin_A1_DCMI)
 #define OMV_CSI_D1_PIN                      (&omv_pin_A10_DCMI)
@@ -331,7 +334,7 @@
 #define OMV_CSI_PXCLK_PIN                   (&omv_pin_G1_DCMI)
 #define OMV_CSI_RESET_PIN                   (&omv_pin_E3_GPIO)
 #define OMV_CSI_POWER_PIN                   (&omv_pin_E1_GPIO)
-//#define OMV_CSI_FSYNC_PIN                   (&omv_pin_B4_GPIO)
+#define OMV_CSI_FSYNC_PIN                   (&omv_pin_D6_GPIO)
 
 #define OMV_XSPI1_IO00_PIN                  (&omv_pin_P0_XSPIM_P1)
 #define OMV_XSPI1_IO01_PIN                  (&omv_pin_P1_XSPIM_P1)
