@@ -40,3 +40,6 @@ tools/st/stedgeai
 
 # macOS
 .DS_Store
+
+# Claude/Codex files
+docs/
