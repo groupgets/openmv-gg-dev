@@ -150,6 +150,14 @@ SECTIONS
     __bss_end__ = .;
   } > OMV_MAIN_MEMORY
 
+  /* lwIP memory pools. Must be explicitly placed NOLOAD: as an orphan section
+     the linker gives it a flash load address between .data and .ram_function,
+     which breaks the startup's sequential copy of .ram_function into ITCM. */
+  .lwip (NOLOAD) : ALIGN(4)
+  {
+    *(.lwip)
+  } > OMV_MAIN_MEMORY
+
   .ram_function : ALIGN(4)
   {
     __ram_function_start__ = .;
