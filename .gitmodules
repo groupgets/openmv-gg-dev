@@ -1,6 +1,6 @@
 [submodule "src/micropython"]
 	path = lib/micropython
-	url = https://github.com/openmv/micropython.git
+	url = https://github.com/groupgets/micropython-gg-dev
 	branch = openmv
 [submodule "src/omv/modules/ulab"]
 	path = modules/ulab
