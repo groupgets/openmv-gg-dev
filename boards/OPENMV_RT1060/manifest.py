@@ -41,7 +41,7 @@ require("protocol", library="openmv-lib")
 include("$(MPY_DIR)/extmod/asyncio")
 
 # GroupGets device stack.
-GROUPGETS_DIR = "../../../groupgets"
+GROUPGETS_DIR = "../../.."
 freeze(GROUPGETS_DIR + "/frameworks/microdot/src", "microdot")
 freeze(GROUPGETS_DIR, "device")
 freeze(GROUPGETS_DIR + "/device", "main.py")  # Top-level boot entry
