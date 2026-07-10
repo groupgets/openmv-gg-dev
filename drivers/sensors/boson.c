@@ -33,6 +33,7 @@
 #include "board_config.h"
 #if (OMV_BOSON_ENABLE == 1)
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,8 +48,26 @@
 
 #define FLIR_BOSON_BOOT_TRY_COUNT (10)
 #define FLIR_BOSON_BOOT_TIME_MS (1000)
+#define FLIR_BOSON_CONFIG_TIMEOUT_MS (3000)
+#define FLIR_BOSON_CONFIG_POLL_MS (50)
 
 static int boson_framesize = 0;
+
+static bool boson_config_write(void) {
+    return (dvoSetOutputFormat(FLR_DVO_DEFAULT_FORMAT) == FLR_OK) &&
+           (dvoSetType(FLR_DVO_TYPE_MONO8) == FLR_OK) &&
+           (dvoApplyCustomSettings() == FLR_OK) &&
+           (telemetrySetState(FLR_DISABLE) == FLR_OK);
+}
+
+static bool boson_config_applied(void) {
+    // The DVO type is the canary for the whole config block: a settings
+    // reload that clobbers anything rewrites the type along with it. The
+    // output format is deliberately not compared — FLR_DVO_DEFAULT_FORMAT
+    // may read back as the resolved concrete format on some firmware.
+    FLR_DVO_TYPE_E type;
+    return (dvoGetType(&type) == FLR_OK) && (type == FLR_DVO_TYPE_MONO8);
+}
 
 static int reset(omv_csi_t *csi) {
     FSLP_set_csi(csi);
@@ -97,20 +116,44 @@ static int reset(omv_csi_t *csi) {
         return -1;
     }
 
-    if (dvoSetOutputFormat(FLR_DVO_DEFAULT_FORMAT) != FLR_OK) {
-        return -1;
-    }
+    // On older cameras (seen on SW 2.x) the restore reloads settings
+    // asynchronously: it ACKs, keeps answering CCI commands, and the reload
+    // lands later — silently clobbering any config written in between. Write
+    // the config and verify it by read-back on a deadline instead of a blind
+    // delay: a camera with a synchronous restore passes on the first
+    // iteration and boots as fast as before.
+    bool suspect = (ret != FLR_OK);
+    bool configured = false;
+    uint32_t start = mp_hal_ticks_ms();
 
-    if (dvoSetType(FLR_DVO_TYPE_MONO8) != FLR_OK) {
-        return -1;
-    }
+    for (;;) {
+        if (!configured) {
+            configured = boson_config_write();
+        }
 
-    if (dvoApplyCustomSettings() != FLR_OK) {
-        return -1;
-    }
+        if (configured && boson_config_applied()) {
+            if (!suspect) {
+                break;
+            }
+            // The restore glitched or already clobbered one config write; a
+            // late reload may still land after a good read-back. Accept only
+            // after the config survives a settle interval.
+            mp_hal_delay_ms(FLIR_BOSON_CONFIG_POLL_MS);
+            if (boson_config_applied()) {
+                break;
+            }
+            configured = false;
+        } else if (configured) {
+            // ACKed but not applied — the reload clobbered it; rewrite.
+            suspect = true;
+            configured = false;
+        }
 
-    if (telemetrySetState(FLR_DISABLE) != FLR_OK) {
-        return -1;
+        if ((mp_hal_ticks_ms() - start) > FLIR_BOSON_CONFIG_TIMEOUT_MS) {
+            return -1;
+        }
+
+        mp_hal_delay_ms(FLIR_BOSON_CONFIG_POLL_MS);
     }
 
     return 0;
