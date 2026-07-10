@@ -1783,6 +1783,17 @@ static mp_obj_t py_csi_boson_get_isotherm_temps(mp_obj_t self_in, mp_obj_t table
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(py_csi_boson_get_isotherm_temps_obj, py_csi_boson_get_isotherm_temps);
 
+static mp_obj_t py_csi_boson_get_frame_rate(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int frame_rate;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_FRAME_RATE, &frame_rate);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_int(frame_rate);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_frame_rate_obj, py_csi_boson_get_frame_rate);
+
 // Radiometry
 static mp_obj_t py_csi_boson_get_radiometry_capable(mp_obj_t self_in) {
     py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -2608,6 +2619,7 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_set_emissivity),          MP_ROM_PTR(&py_csi_boson_set_emissivity_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_emissivity),          MP_ROM_PTR(&py_csi_boson_get_emissivity_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_sw_version),          MP_ROM_PTR(&py_csi_boson_get_software_rev_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_frame_rate),          MP_ROM_PTR(&py_csi_boson_get_frame_rate_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_sensor_sn),           MP_ROM_PTR(&py_csi_boson_get_sensor_sn_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_overtemp_threshold),  MP_ROM_PTR(&py_csi_boson_get_overtemp_threshold_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_overtemp_event_count), MP_ROM_PTR(&py_csi_boson_get_overtemp_event_count_obj) },

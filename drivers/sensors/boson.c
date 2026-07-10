@@ -497,6 +497,15 @@ static int ioctl(omv_csi_t *csi, int request, va_list ap) {
             *out_t5 = t5;
             return 0;
         }
+        case OMV_CSI_IOCTL_BOSON_GET_FRAME_RATE: {
+            uint32_t frame_rate;
+            if (sysctrlGetCameraFrameRate(&frame_rate) != FLR_OK) {
+                return -1;
+            }
+            int *out = va_arg(ap, int *);
+            *out = (int) frame_rate;
+            return 0;
+        }
         // Radiometry, Sensor Info & Overtemp
         case OMV_CSI_IOCTL_BOSON_GET_RADIOMETRY_CAPABLE: {
             FLR_ENABLE_E capable;
