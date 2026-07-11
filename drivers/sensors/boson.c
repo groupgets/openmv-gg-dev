@@ -506,6 +506,22 @@ static int ioctl(omv_csi_t *csi, int request, va_list ap) {
             *out = (int) frame_rate;
             return 0;
         }
+        case OMV_CSI_IOCTL_BOSON_SET_FFC_NUM_FRAMES: {
+            int num_frames = va_arg(ap, int);
+            if (gaoSetNumFFCFrames((uint16_t) num_frames) != FLR_OK) {
+                return -1;
+            }
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_FFC_NUM_FRAMES: {
+            uint16_t num_frames;
+            if (gaoGetNumFFCFrames(&num_frames) != FLR_OK) {
+                return -1;
+            }
+            int *out = va_arg(ap, int *);
+            *out = (int) num_frames;
+            return 0;
+        }
         // Radiometry, Sensor Info & Overtemp
         case OMV_CSI_IOCTL_BOSON_GET_RADIOMETRY_CAPABLE: {
             FLR_ENABLE_E capable;

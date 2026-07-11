@@ -1794,6 +1794,27 @@ static mp_obj_t py_csi_boson_get_frame_rate(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_frame_rate_obj, py_csi_boson_get_frame_rate);
 
+static mp_obj_t py_csi_boson_set_ffc_num_frames(mp_obj_t self_in, mp_obj_t val_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_SET_FFC_NUM_FRAMES, mp_obj_get_int(val_in));
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(py_csi_boson_set_ffc_num_frames_obj, py_csi_boson_set_ffc_num_frames);
+
+static mp_obj_t py_csi_boson_get_ffc_num_frames(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int num_frames;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_FFC_NUM_FRAMES, &num_frames);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_int(num_frames);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_ffc_num_frames_obj, py_csi_boson_get_ffc_num_frames);
+
 // Radiometry
 static mp_obj_t py_csi_boson_get_radiometry_capable(mp_obj_t self_in) {
     py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -2620,6 +2641,8 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_get_emissivity),          MP_ROM_PTR(&py_csi_boson_get_emissivity_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_sw_version),          MP_ROM_PTR(&py_csi_boson_get_software_rev_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_frame_rate),          MP_ROM_PTR(&py_csi_boson_get_frame_rate_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_set_ffc_num_frames),      MP_ROM_PTR(&py_csi_boson_set_ffc_num_frames_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_ffc_num_frames),      MP_ROM_PTR(&py_csi_boson_get_ffc_num_frames_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_sensor_sn),           MP_ROM_PTR(&py_csi_boson_get_sensor_sn_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_overtemp_threshold),  MP_ROM_PTR(&py_csi_boson_get_overtemp_threshold_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_overtemp_event_count), MP_ROM_PTR(&py_csi_boson_get_overtemp_event_count_obj) },
