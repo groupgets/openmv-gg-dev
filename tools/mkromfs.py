@@ -31,6 +31,7 @@ ROMFS_HEADER_ALIGN = 16
 ROMFS_FILEREC_ALIGN = 8
 ROMFS_RECORD_KIND_PADDING = 1
 ROMFS_RECORD_KIND_DATA = 2
+ROMFS_RECORD_KIND_DIRECTORY = 4
 ROMFS_RECORD_KIND_FILE = 5
 
 
@@ -77,10 +78,83 @@ def encode_file(name, data, align, offset):
     return file_rec
 
 
+class RomfsWriter:
+    """Builds a romfs image, preserving directory structure.
+
+    A directory is a DIRECTORY record whose payload is the dir's name record
+    followed by its child records. Child alignment is computed from an offset
+    that restarts at 0 inside each directory; closedir() then aligns the
+    directory's *content* to the image's largest alignment, so a child's
+    relative offset stays congruent (mod that alignment) to its absolute one.
+    Per-file data alignment therefore holds at any depth.
+    """
+
+    def __init__(self, max_align):
+        self.max_align = max(max_align, ROMFS_FILEREC_ALIGN)
+        # [name, child-records]; index 0 is the root (wrapped by the header).
+        self._dirs = [["", bytearray()]]
+        # Absolute offset of the current dir's next child. The root's content
+        # begins after the header record, which is aligned to ROMFS_HEADER_ALIGN.
+        self._offsets = [ROMFS_HEADER_ALIGN]
+
+    def opendir(self, name):
+        self._dirs.append([name, bytearray()])
+        self._offsets.append(0)
+
+    def closedir(self):
+        name, content = self._dirs.pop()
+        self._offsets.pop()
+        name_rec = encode_record(0, bytes(name, "ascii"))
+        record = encode_record(
+            ROMFS_RECORD_KIND_DIRECTORY,
+            name_rec + bytes(content),
+            self.max_align,
+            self._offsets[-1] + len(name_rec),
+        )
+        self._offsets[-1] += len(record)
+        self._dirs[-1][1].extend(record)
+
+    def mkfile(self, name, data, align):
+        record = encode_file(bytes(name, "ascii"), data, align, self._offsets[-1])
+        self._offsets[-1] += len(record)
+        self._dirs[-1][1].extend(record)
+
+    def finalise(self):
+        if len(self._dirs) != 1:
+            raise Exception("romfs: unclosed directory")
+        return encode_record(
+            ROMFS_HEADER, bytes(self._dirs[0][1]), ROMFS_HEADER_ALIGN
+        )
+
+
+def pack_tree(writer, src_dir, align, excludes=("__pycache__",)):
+    """Pack the *contents* of src_dir into writer, mirroring its structure.
+
+    The tree lands at the romfs root, so <src>/a.js -> /rom/a.js and
+    <src>/sub/b.jpg -> /rom/sub/b.jpg. Sorted for a reproducible image.
+    """
+    for name in sorted(os.listdir(src_dir)):
+        if name in excludes:
+            continue
+        path = os.path.join(src_dir, name)
+        if os.path.isdir(path):
+            writer.opendir(name)
+            pack_tree(writer, path, align, excludes)
+            writer.closedir()
+        elif os.path.isfile(path):
+            with open(path, "rb") as f:
+                writer.mkfile(name, f.read(), align)
+
+
 def process_entry(entry, vela_args, stedge_args, build_dir):
     """Process a single romfs entry. Returns (processed_entry, labels_entry_or_None) or None if disabled."""
     if not entry.get("enabled", True):
         return None
+
+    if entry['type'] == 'dir':
+        # A directory tree is packed verbatim at image-build time — nothing to
+        # convert here.
+        return (entry, None)
 
     file_path = entry['path']
     file_name = os.path.basename(os.path.splitext(file_path)[0])
@@ -164,26 +238,31 @@ def romfs_build(romfs_cfg, p, args):
 
     romfs_cfg["entries"] = new_entries
 
-    # Build romfs image.
-    romfs_data = bytearray()
-    romfs_offset = ROMFS_HEADER_ALIGN
+    # Build romfs image. Directory records are aligned to the largest alignment
+    # any entry asks for, which is what keeps nested files' data alignment valid.
     romfs_size = int(romfs_cfg["size"], 16)
+    max_align = max(
+        [entry.get("alignment", 4) for entry in romfs_cfg["entries"]] + [4]
+    )
+    writer = RomfsWriter(max_align)
 
     for entry in romfs_cfg["entries"]:
-        file_path = entry['path']
-        file_name = os.path.basename(file_path)
-        file_size = os.path.getsize(file_path)
         file_align = entry.get("alignment", 4)
+        if entry['type'] == 'dir':
+            # Pack the tree as-is, so what's on the romfs mirrors the source
+            # layout (e.g. static/nosensor/x.jpg -> /rom/nosensor/x.jpg).
+            pack_tree(writer, entry['path'], file_align,
+                      tuple(entry.get("exclude", ("__pycache__",))))
+            continue
+        file_path = entry['path']
         with open(file_path, "rb") as file:
             file_data = file.read()
-        record = encode_file(bytes(file_name, "ascii"), file_data, file_align, romfs_offset)
-        romfs_offset += len(record)
-        romfs_data += record
+        writer.mkfile(os.path.basename(file_path), file_data, file_align)
 
     # Write the romfs image.
     with open(os.path.join(args.out_dir, f"romfs{p}.img"), "wb") as romfs_file:
         # Pad the ROMFS header to ensure a fixed offset from the start of the file.
-        romfs_data = encode_record(ROMFS_HEADER, romfs_data, ROMFS_HEADER_ALIGN)
+        romfs_data = writer.finalise()
         if len(romfs_data) > romfs_size:
             print(f"{CR}romfs partition overflow "
                   f"{CR}{len(romfs_data)/1024:.1f}KiB / {CR}{romfs_size/1024:.1f}KiB "
@@ -199,9 +278,19 @@ def romfs_build(romfs_cfg, p, args):
           f"({CR}{(len(romfs_data) / romfs_size) * 100:.1f}%){CN}")
     for entry in romfs_cfg["entries"]:
         file_path = entry['path']
+        file_align = entry.get("alignment", 4)
+        if entry['type'] == 'dir':
+            # Report the packed tree the way it lands on the romfs.
+            for root, _dirs, files in os.walk(file_path):
+                rel = os.path.relpath(root, file_path)
+                for name in sorted(files):
+                    sub = name if rel == "." else os.path.join(rel, name)
+                    size = os.path.getsize(os.path.join(root, name))
+                    print(f" {CB}-size: {CR}{size:<8} {CB}alignment: {CR}{file_align:<4} "
+                          f"{CB}path: {CG}/rom/{sub}{CN}")
+            continue
         file_name = os.path.basename(file_path)
         file_size = os.path.getsize(file_path)
-        file_align = entry.get("alignment", 4)
         print(f" {CB}-size: {CR}{file_size:<8} {CB}alignment: {CR}{file_align:<4} {CB}path: {CG}/rom/{file_name}{CN}");
     print("")
 
