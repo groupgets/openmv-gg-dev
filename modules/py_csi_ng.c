@@ -1815,6 +1815,28 @@ static mp_obj_t py_csi_boson_get_ffc_num_frames(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_ffc_num_frames_obj, py_csi_boson_get_ffc_num_frames);
 
+static mp_obj_t py_csi_boson_set_temp_background(mp_obj_t self_in, mp_obj_t kelvin_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    float kelvin = mp_obj_get_float(kelvin_in);
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_SET_TEMP_BACKGROUND, (double) kelvin);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(py_csi_boson_set_temp_background_obj, py_csi_boson_set_temp_background);
+
+static mp_obj_t py_csi_boson_get_temp_background(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    float kelvin;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_TEMP_BACKGROUND, &kelvin);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_float(kelvin);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_temp_background_obj, py_csi_boson_get_temp_background);
+
 // Counts -> temperature (for cores with no radiometric factory calibration).
 static mp_obj_t py_csi_boson_get_temp_from_counts(mp_obj_t self_in, mp_obj_t rbfo_type_in,
                                                   mp_obj_t counts_in) {
@@ -2681,6 +2703,8 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_unit),       MP_ROM_PTR(&py_csi_boson_get_isotherm_unit_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_temps),      MP_ROM_PTR(&py_csi_boson_get_isotherm_temps_obj) },
     // Radiometry, Sensor Info & Overtemp
+    { MP_ROM_QSTR(MP_QSTR_boson_set_temp_background),     MP_ROM_PTR(&py_csi_boson_set_temp_background_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_temp_background),     MP_ROM_PTR(&py_csi_boson_get_temp_background_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_temp_from_counts),    MP_ROM_PTR(&py_csi_boson_get_temp_from_counts_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_rbfo),                MP_ROM_PTR(&py_csi_boson_get_rbfo_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_normalization_target), MP_ROM_PTR(&py_csi_boson_get_normalization_target_obj) },

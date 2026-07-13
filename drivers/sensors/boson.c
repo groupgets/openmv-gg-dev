@@ -661,6 +661,24 @@ static int ioctl(omv_csi_t *csi, int request, va_list ap) {
             *out = val;
             return 0;
         }
+        case OMV_CSI_IOCTL_BOSON_SET_TEMP_BACKGROUND: {
+            // Kelvin. The reflected temperature that (1 - emissivity) of the
+            // apparent radiance actually comes from.
+            float val = (float) va_arg(ap, double);
+            if (radiometrySetTempBackground(val) != FLR_OK) {
+                return -1;
+            }
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_TEMP_BACKGROUND: {
+            float val;
+            if (radiometryGetTempBackground(&val) != FLR_OK) {
+                return -1;
+            }
+            float *out = va_arg(ap, float *);
+            *out = val;
+            return 0;
+        }
         case OMV_CSI_IOCTL_BOSON_GET_SOFTWARE_REV: {
             uint32_t major, minor, patch;
             if (bosonGetSoftwareRev(&major, &minor, &patch) != FLR_OK) {

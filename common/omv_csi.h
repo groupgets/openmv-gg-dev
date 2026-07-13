@@ -357,7 +357,11 @@ typedef enum {
     // be done on the host when the camera refuses to do it.
     OMV_CSI_IOCTL_BOSON_GET_TEMP_FROM_COUNTS        = 0xC3,
     OMV_CSI_IOCTL_BOSON_GET_RBFO                    = 0xC4,
-    OMV_CSI_IOCTL_BOSON_GET_NORMALIZATION_TARGET    = 0xC5
+    OMV_CSI_IOCTL_BOSON_GET_NORMALIZATION_TARGET    = 0xC5,
+    // The reflected/background temperature, the companion to emissivity: what the
+    // camera sees off a low-emissivity target is mostly the ROOM reflected in it.
+    OMV_CSI_IOCTL_BOSON_SET_TEMP_BACKGROUND         = 0xC6,
+    OMV_CSI_IOCTL_BOSON_GET_TEMP_BACKGROUND         = 0xC7
 } omv_csi_ioctl_t;
 
 typedef enum {
