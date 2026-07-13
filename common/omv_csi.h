@@ -349,7 +349,15 @@ typedef enum {
     OMV_CSI_IOCTL_BOSON_GET_SPOT_METER_STATS_MODE   = 0xBF,
     OMV_CSI_IOCTL_BOSON_GET_FRAME_RATE              = 0xC0,
     OMV_CSI_IOCTL_BOSON_SET_FFC_NUM_FRAMES          = 0xC1,
-    OMV_CSI_IOCTL_BOSON_GET_FFC_NUM_FRAMES          = 0xC2
+    OMV_CSI_IOCTL_BOSON_GET_FFC_NUM_FRAMES          = 0xC2,
+    // Counts -> temperature, for cores with no radiometric factory calibration.
+    // radiometryGetTempFromCounts() is a pure calculator (counts go in as an
+    // argument, not read from the sensor), so it works with the 8-bit video tap.
+    // The RBFO getters expose the Planck coefficients so the same conversion can
+    // be done on the host when the camera refuses to do it.
+    OMV_CSI_IOCTL_BOSON_GET_TEMP_FROM_COUNTS        = 0xC3,
+    OMV_CSI_IOCTL_BOSON_GET_RBFO                    = 0xC4,
+    OMV_CSI_IOCTL_BOSON_GET_NORMALIZATION_TARGET    = 0xC5
 } omv_csi_ioctl_t;
 
 typedef enum {

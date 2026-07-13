@@ -1815,6 +1815,55 @@ static mp_obj_t py_csi_boson_get_ffc_num_frames(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_ffc_num_frames_obj, py_csi_boson_get_ffc_num_frames);
 
+// Counts -> temperature (for cores with no radiometric factory calibration).
+static mp_obj_t py_csi_boson_get_temp_from_counts(mp_obj_t self_in, mp_obj_t rbfo_type_in,
+                                                  mp_obj_t counts_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int rbfo_type = mp_obj_get_int(rbfo_type_in);
+    int counts = mp_obj_get_int(counts_in);
+    float temp;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_TEMP_FROM_COUNTS,
+                              rbfo_type, counts, &temp);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    // Kelvin.
+    return mp_obj_new_float(temp);
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(py_csi_boson_get_temp_from_counts_obj, py_csi_boson_get_temp_from_counts);
+
+static mp_obj_t py_csi_boson_get_rbfo(mp_obj_t self_in, mp_obj_t rbfo_type_in, mp_obj_t low_gain_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int rbfo_type = mp_obj_get_int(rbfo_type_in);
+    int low_gain = mp_obj_is_true(low_gain_in);
+    float r, b, f, o;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_RBFO,
+                              rbfo_type, low_gain, &r, &b, &f, &o);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    mp_obj_t tuple[4] = {
+        mp_obj_new_float(r),
+        mp_obj_new_float(b),
+        mp_obj_new_float(f),
+        mp_obj_new_float(o),
+    };
+    return mp_obj_new_tuple(4, tuple);
+}
+static MP_DEFINE_CONST_FUN_OBJ_3(py_csi_boson_get_rbfo_obj, py_csi_boson_get_rbfo);
+
+static mp_obj_t py_csi_boson_get_normalization_target(mp_obj_t self_in) {
+    py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int target;
+    int error = omv_csi_ioctl(self->csi, OMV_CSI_IOCTL_BOSON_GET_NORMALIZATION_TARGET, &target);
+    if (error != 0) {
+        omv_csi_raise_error(error);
+    }
+    return mp_obj_new_int(target);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(py_csi_boson_get_normalization_target_obj,
+                                 py_csi_boson_get_normalization_target);
+
 // Radiometry
 static mp_obj_t py_csi_boson_get_radiometry_capable(mp_obj_t self_in) {
     py_csi_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -2632,6 +2681,9 @@ static const mp_rom_map_elem_t py_csi_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_unit),       MP_ROM_PTR(&py_csi_boson_get_isotherm_unit_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_isotherm_temps),      MP_ROM_PTR(&py_csi_boson_get_isotherm_temps_obj) },
     // Radiometry, Sensor Info & Overtemp
+    { MP_ROM_QSTR(MP_QSTR_boson_get_temp_from_counts),    MP_ROM_PTR(&py_csi_boson_get_temp_from_counts_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_rbfo),                MP_ROM_PTR(&py_csi_boson_get_rbfo_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boson_get_normalization_target), MP_ROM_PTR(&py_csi_boson_get_normalization_target_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_radiometry_capable),  MP_ROM_PTR(&py_csi_boson_get_radiometry_capable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_set_radiometry_enable),   MP_ROM_PTR(&py_csi_boson_set_radiometry_enable_obj) },
     { MP_ROM_QSTR(MP_QSTR_boson_get_radiometry_enable),   MP_ROM_PTR(&py_csi_boson_get_radiometry_enable_obj) },

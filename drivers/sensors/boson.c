@@ -522,6 +522,70 @@ static int ioctl(omv_csi_t *csi, int request, va_list ap) {
             *out = (int) num_frames;
             return 0;
         }
+        // Counts -> temperature.  On a core with no radiometric factory
+        // calibration the radiometry block will not run (TLinear NAKs) and
+        // spotMeterGetTempStats() NAKs with it -- but the spot meter still
+        // reports raw counts.  These three let the counts be converted anyway,
+        // the way the Lepton driver does it for non-radiometric Leptons:
+        // approximate, uncalibrated, but useful.  All are pure reads/calculators
+        // -- none of them need the 16-bit video tap.
+        case OMV_CSI_IOCTL_BOSON_GET_TEMP_FROM_COUNTS: {
+            // radiometryGetTempFromCounts(): counts are an ARGUMENT, not read
+            // from the sensor.  May NAK on a non-radiometric core, in which case
+            // the host does the same maths itself with the RBFO coefficients.
+            int rbfo_type = va_arg(ap, int);
+            int counts = va_arg(ap, int);
+            float *out = va_arg(ap, float *);
+            float temp;
+            if (radiometryGetTempFromCounts((FLR_RADIOMETRY_RBFO_TYPE_E) rbfo_type,
+                                            (uint16_t) counts, &temp) != FLR_OK) {
+                return -1;
+            }
+            *out = temp;
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_RBFO: {
+            // The Planck coefficients behind the conversion above.  DEFAULT is
+            // the generic (non per-unit) set; FACTORY is the per-unit calibration
+            // a radiometric core is shipped with.
+            int rbfo_type = va_arg(ap, int);
+            int low_gain = va_arg(ap, int);
+            FLR_RADIOMETRY_RBFO_PARAMS_T params;
+            FLR_RESULT res;
+            if (rbfo_type == FLR_RADIOMETRY_FACTORY_RBFO) {
+                res = low_gain ? radiometryGetRBFOLowGainFactory(&params)
+                               : radiometryGetRBFOHighGainFactory(&params);
+            } else {
+                res = low_gain ? radiometryGetRBFOLowGainDefault(&params)
+                               : radiometryGetRBFOHighGainDefault(&params);
+            }
+            if (res != FLR_OK) {
+                return -1;
+            }
+            float *out_r = va_arg(ap, float *);
+            float *out_b = va_arg(ap, float *);
+            float *out_f = va_arg(ap, float *);
+            float *out_o = va_arg(ap, float *);
+            *out_r = params.RBFO_R;
+            *out_b = params.RBFO_B;
+            *out_f = params.RBFO_F;
+            *out_o = params.RBFO_O;
+            return 0;
+        }
+        case OMV_CSI_IOCTL_BOSON_GET_NORMALIZATION_TARGET: {
+            // "The nominal expected output of the camera immediately after FFC
+            // (non-radiometric) when imaging the FFC source" -- i.e. the count
+            // that corresponds to the shutter, which sits at the camera's own
+            // temperature.  This is the Boson's equivalent of the 8192 mid-scale
+            // anchor the Lepton driver subtracts.
+            uint16_t target;
+            if (roicGetActiveNormalizationTarget(&target) != FLR_OK) {
+                return -1;
+            }
+            int *out = va_arg(ap, int *);
+            *out = (int) target;
+            return 0;
+        }
         // Radiometry, Sensor Info & Overtemp
         case OMV_CSI_IOCTL_BOSON_GET_RADIOMETRY_CAPABLE: {
             FLR_ENABLE_E capable;
